@@ -1,54 +1,35 @@
 import librosa
+import numpy as np
 
-def identity(y, sr):
+# no transformation
+def identity(y: np.ndarray, sr: int, *args):
     return y, sr
 
-def make_runner(n_steps):
-    def pitch_shift(y, sr):
-        # 1 step is a semi-tone
-        y = librosa.effects.pitch_shift(
-            y,
-            sr=sr,
-            n_steps=1
-        )
-        return y, sr
-    return pitch_shift
+def pitchshift(y: np.ndarray, sr: int, n_steps: int):
+    # 1 step is a semi-tone
+    y = librosa.effects.pitch_shift(
+        y,
+        sr=sr,
+        n_steps=n_steps
+    )
+    return y, sr
 
-pitch_shift_1 = make_runner(1)
-pitch_shift_2 = make_runner(2)
-pitch_shift_3 = make_runner(3)
-pitch_shift_4 = make_runner(4)
-pitch_shift_5 = make_runner(5)
-pitch_shift_6 = make_runner(6)
-pitch_shift_7 = make_runner(7)
-pitch_shift_8 = make_runner(8)
-pitch_shift_9 = make_runner(9)
-pitch_shift_10 = make_runner(10)
-pitch_shift_11 = make_runner(11)
-pitch_shift_12 = make_runner(12)  
-
-def make_runner(rate):
-    def time_stretch(y, sr):
-        # rate 1.20 is 20% faster
-        # rate 0.80 is 20% slower
-        y = librosa.effects.time_stretch(y, rate=rate)
-        return y, sr
-    return time_stretch
-
-time_stretch_11 = make_runner(1.1)
-time_stretch_12 = make_runner(1.2)
-time_stretch_13 = make_runner(1.3)
-time_stretch_14 = make_runner(1.4)
-time_stretch_15 = make_runner(1.5)
-time_stretch_20 = make_runner(2.0)
-
-time_stretch_095 = make_runner(0.95)
-time_stretch_090 = make_runner(0.90)
-time_stretch_085 = make_runner(0.85)
-time_stretch_080 = make_runner(0.80)
-time_stretch_075 = make_runner(0.75)
-time_stretch_050 = make_runner(0.50)
+def timestretch(y: np.ndarray, sr: int, rate: float):
+    # rate 1.20 is 20% faster
+    # rate 0.80 is 20% slower
+    y = librosa.effects.time_stretch(y, rate=rate)
+    return y, sr
 
 tf_dict = {
     "identity": identity,
+    "pitchshift": pitchshift,
+    "timestretch": timestretch,
+}
+
+tf_dict_params = {
+    "identity": ["none"],
+    "pitchshift": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24,
+                    -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -24],
+    "timestretch": [1.1, 1.2, 1.3, 1.4, 1.5, 2.0,
+                     1/1.1, 1/1.2, 1/1.3, 1/1.4, 1/1.5, 1/2.0],
 }
