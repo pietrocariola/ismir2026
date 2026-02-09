@@ -46,10 +46,6 @@ def main():
             "file_embeds_path": []
         })
 
-    n_tfs = 0
-    for t in transformations:
-        n_tfs += max(1, len(tf.tf_dict_params[t]))
-
     for model in models:
         model = model.lower().replace("_", "")
 
@@ -57,7 +53,7 @@ def main():
         if model == "clap":
             mdl = laion_clap.CLAP_Module(enable_fusion=CLAP_FUSION)
             mdl.load_ckpt() # download the default pretrained checkpoint.
-            for file in tqdm(files[:2]):
+            for file in tqdm(files[:10]):
                 df_new = pd.DataFrame({
                         "ds_name": [],
                         "file": [],
