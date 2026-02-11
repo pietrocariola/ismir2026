@@ -1,4 +1,11 @@
 .*/
 draft.py
 draft.csv
+draft.ipynb
 embeds/*
+images/*
+projs/*
+*.zip
+big_10file_ts01/*
+big_10file_ps01/*
+metadata.csv

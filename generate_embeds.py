@@ -31,7 +31,7 @@ def main():
     ds_name = args.dataset_name.lower().replace("_", "")
     out_path = args.output_path
 
-    os.makedirs("embeds", exist_ok=True)
+    os.makedirs(out_path, exist_ok=True)
     if Path("metadata.csv").exists():
         df = pd.read_csv("metadata.csv")
     else:
@@ -53,7 +53,7 @@ def main():
         if model == "clap":
             mdl = laion_clap.CLAP_Module(enable_fusion=CLAP_FUSION)
             mdl.load_ckpt() # download the default pretrained checkpoint.
-            for file in tqdm(files[:10]):
+            for file in tqdm(files):
                 df_new = pd.DataFrame({
                         "ds_name": [],
                         "file": [],
@@ -102,10 +102,10 @@ def main():
                     del(df_new)
                     print(f"Exception in file: {file}")
                     continue
-                df = pd.concat([df, df_new], ignore_index=True)        
+                df = pd.concat([df, df_new], ignore_index=True)
+                df.to_csv("metadata.csv", index=False)        
                 del(df_new)                
-            del(mdl)   
-    df.to_csv("metadata.csv", index=False)   
+            del(mdl)    
 
 if __name__ == "__main__":
     main()
