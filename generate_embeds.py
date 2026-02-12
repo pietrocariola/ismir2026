@@ -70,7 +70,7 @@ def main():
                         transf = transf.lower().replace("_", "")
                         tfparams = tf.tf_dict_params[transf] # params set in transformation.py
                         for tfparam in tfparams:
-                            transf_param_name = str(tfparam).lower().replace("_", "")[:5]                                      
+                            transf_param_name = str(tfparam).lower().replace("_", "")[:5].replace(".","p")                                      
                             file_embeds = f"{ds_name}_{file.split(".")[0].replace("_", "").lower() \
                                                     }_{model}_{transf}_{transf_param_name}.npy"
                             file_write_path = os.path.join(out_path, file_embeds)
