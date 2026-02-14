@@ -70,9 +70,9 @@ def main():
                         transf = transf.lower().replace("_", "")
                         tfparams = tf.tf_dict_params[transf] # params set in transformation.py
                         for tfparam in tfparams:
-                            transf_param_name = str(tfparam).lower().replace("_", "")[:5].replace(".","p")                                      
+                            transf_param_name = str(tfparam).lower().replace("_", "")[:5]                                     
                             file_embeds = f"{ds_name}_{file.split(".")[0].replace("_", "").lower() \
-                                                    }_{model}_{transf}_{transf_param_name}.npy"
+                                                    }_{model}_{transf}_{transf_param_name.replace(".","p")}.npy"
                             file_write_path = os.path.join(out_path, file_embeds)
                             if df.loc[
                                 (df["ds_name"]==ds_name) &
