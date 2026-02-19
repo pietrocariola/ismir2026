@@ -26,18 +26,8 @@ def clap_embeds(y, mdl, transf, tfparam):
 
 def generate(load_mdl, embed_fn, file_paths, df, transformations, model, out_path):
     mdl = load_mdl()
-    for d, file_path in tqdm(file_paths):
+    for d, g, file_path in tqdm(file_paths):
         file = os.path.basename(file_path)
-        df_new = pd.DataFrame({
-                "ds_name": [],
-                "file": [],
-                "file_path": [],
-                "model": [],
-                "transf": [],
-                "transf_param_name": [],
-                "file_embeds": [],
-                "file_embeds_path": []
-            })
         try:
             y, sr = librosa.load(file_path, sr=SR)
             for transf in transformations:
@@ -48,34 +38,27 @@ def generate(load_mdl, embed_fn, file_paths, df, transformations, model, out_pat
                     file_embeds = f"x_{d}_{file.split(".")[0].replace("_", "").lower() \
                                             }_{model}_{transf}_{transf_param_name.replace(".","p")}.npy"
                     file_embeds_path = os.path.join(out_path, file_embeds)
-                    if df.loc[
-                        (df["ds_name"]==d) &
-                        (df["file"]==file) &
-                        (df["model"]==model) &
-                        (df["transf"]==transf) &
-                        (df["transf_param_name"]==transf_param_name) &
-                        (df["file_embeds"]==file_embeds)
-                    ].empty:                            
+                    if not Path(file_embeds_path).exists():                           
                         x = embed_fn(y, mdl, transf, tfparam)
-                        np.save(file_embeds_path, x)
-                        new_row = pd.DataFrame([{
-                            "ds_name": d,
-                            "file": file,
-                            "file_path": file_path,
-                            "model": model,
-                            "transf": transf,
-                            "transf_param_name": transf_param_name,
-                            "file_embeds": file_embeds,
-                            "file_embeds_path": os.path.abspath(file_embeds_path)
-                        }])
-                        df_new = pd.concat([df_new, new_row], ignore_index=True)
+                        np.save(file_embeds_path, x)            
+                    new_row = pd.DataFrame([{
+                        "ds_name": d,
+                        "genre": g,
+                        "file": file,
+                        "file_path": file_path,
+                        "model": model,
+                        "transf": transf,
+                        "transf_param_name": transf_param_name,
+                        "file_embeds": file_embeds,
+                        "file_embeds_path": os.path.abspath(file_embeds_path)
+                    }])          
+                    df = pd.concat([df, new_row], ignore_index=True)
         except Exception:
-            del(df_new)
+            del(new_row)
             print(f"Exception in file: {file}")
             continue
-        df = pd.concat([df, df_new], ignore_index=True)
         df.to_csv("metadata.csv", index=False)        
-        del(df_new)                
+        del(new_row)                
     del(mdl)
 
 def main():
@@ -102,12 +85,13 @@ def main():
     out_path = os.path.abspath(args.output_path)
     print(f"output_path: {args.output_path}")
     os.makedirs(out_path, exist_ok=True)
-    
+
     if Path("metadata.csv").exists():
         df = pd.read_csv("metadata.csv")
     else:
         df = pd.DataFrame({
             "ds_name": [],
+            "genre": [],
             "file": [],
             "file_path": [],
             "model": [],
@@ -121,9 +105,10 @@ def main():
     with open(tracks, "r") as t:
         tracks = json.load(t)
         for d in datasets:
-            if d in tracks.keys():
-                for track in tracks[d]:
-                    file_paths.append((d, track))
+            genres = list(tracks[d].keys())
+            for g in genres:
+                for track in tracks[d][g]:
+                    file_paths.append((d, g, track))
 
     for model in models:
         model = model.lower().replace("_", "")
