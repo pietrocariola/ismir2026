@@ -8,58 +8,88 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 import json
+from AudioCLIP.model.audioclip import AudioCLIP
+from AudioCLIP.utils.transforms import ToTensor1D
+import wav2clip
 
-SR = 48000 # clap requires 48kHz sample rate
-CLAP_FUSION = False # fusion or not snipets from the first middle and last third of the sample
+
+# ---------- CLAP ----------
+CLAP_SR = 48000 # clap requires 48kHz sample rate
+CLAP_FUSION = False # fuse or not snipets from the first middle and last thirds of the sample
 
 def load_clap():
     mdl = laion_clap.CLAP_Module(enable_fusion=CLAP_FUSION)
     mdl.load_ckpt() # download the default pretrained checkpoint.
     return mdl
 
-def clap_embeds(y, mdl, transf, tfparam):
-    x, sr = tf.tf_dict[transf](y, SR, tfparam)
+def clap_embeds(y, sr, mdl, transf, tfparam):
+    x, sr = tf.tf_dict[transf](y, sr, tfparam)
     x = x.reshape(1, -1) # (n_channels, embeds_size)
     x = mdl.get_audio_embedding_from_data(
         x = x, use_tensor=False)
-    return x
+    return x    # shape (1, 512)
 
-def generate(load_mdl, embed_fn, file_paths, df, transformations, model, out_path):
+# ---------- AudioCLIP ----------
+ACLIP_SR = 44100 # derived from ESResNeXt
+ACLIP_CKPT = 'AudioCLIP-Full-Training.pt'
+
+def load_aclip():    
+    mdl = AudioCLIP(pretrained=f'./AudioCLIP/assets/{ACLIP_CKPT}')
+    mdl.eval()
+    return mdl
+
+def aclip_embeds(y, sr, mdl, transf, tfparam):
+    audio_t = ToTensor1D()
+    x, sr = tf.tf_dict[transf](y, sr, tfparam)
+    x = audio_t(x.reshape(1, -1))
+    ((x, _, _), _), _ = mdl(audio=x)
+    x = x.detach().cpu().numpy() 
+    return x    # shape (1, 1024)
+
+# ---------- wav2clip ----------
+WAV2CLIP_SR = 48000 
+
+def load_wav2clip():    
+    mdl = wav2clip.get_model()
+    return mdl
+
+def wav2clip_embeds(y, sr, mdl, transf, tfparam):
+    x, sr = tf.tf_dict[transf](y, sr, tfparam)
+    x = x.reshape(1, -1)
+    x = wav2clip.embed_audio(x, mdl)
+    return x    # shape (1, 512)
+
+def generate(load_mdl, embed_fn, sr, file_paths, df, transformations, model, out_path):
     mdl = load_mdl()
     for d, g, file_path in tqdm(file_paths):
         file = os.path.basename(file_path)
-        try:
-            y, sr = librosa.load(file_path, sr=SR)
-            for transf in transformations:
-                transf = transf.lower().replace("_", "")
-                tfparams = tf.tf_dict_params[transf] # params set in transformation.py
-                for tfparam in tfparams:
-                    transf_param_name = str(tfparam).lower().replace("_", "")[:5]                                     
-                    file_embeds = f"x_{d}_{file.split(".")[0].replace("_", "").lower() \
-                                            }_{model}_{transf}_{transf_param_name.replace(".","p")}.npy"
-                    file_embeds_path = os.path.join(out_path, file_embeds)
-                    if not Path(file_embeds_path).exists():                           
-                        x = embed_fn(y, mdl, transf, tfparam)
-                        np.save(file_embeds_path, x)            
-                    new_row = pd.DataFrame([{
-                        "ds_name": d,
-                        "genre": g,
-                        "file": file,
-                        "file_path": file_path,
-                        "model": model,
-                        "transf": transf,
-                        "transf_param_name": transf_param_name,
-                        "file_embeds": file_embeds,
-                        "file_embeds_path": os.path.abspath(file_embeds_path)
-                    }])          
-                    df = pd.concat([df, new_row], ignore_index=True)
-        except Exception:
-            del(new_row)
-            print(f"Exception in file: {file}")
-            continue
+        y, sr = librosa.load(file_path, sr=sr)
+        for transf in transformations:
+            transf = transf.lower().replace("_", "")
+            tfparams = tf.tf_dict_params[transf] # params set in transformation.py
+            for tfparam in tfparams:
+                transf_param_name = str(tfparam).lower().replace("_", "")[:5]                                     
+                file_embeds = f"x_{d}_{file.split('.')[0].replace('_', '').lower()}_{model}_{transf}_{transf_param_name.replace('.','p')}.npy"
+                file_embeds_path = os.path.join(out_path, file_embeds)
+                if not Path(file_embeds_path).exists():                           
+                    x = embed_fn(y, sr, mdl, transf, tfparam)
+                    np.save(file_embeds_path, x)            
+                new_row = pd.DataFrame([{
+                    "ds_name": d,
+                    "genre": g,
+                    "file": file,
+                    "file_path": file_path,
+                    "model": model,
+                    "transf": transf,
+                    "transf_param_name": transf_param_name,
+                    "file_embeds": file_embeds,
+                    "file_embeds_path": os.path.abspath(file_embeds_path)
+                }])          
+                df = pd.concat([df, new_row], ignore_index=True)
         df.to_csv("metadata.csv", index=False)        
         del(new_row)                
     del(mdl)
+    return df
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Embeds CLI")
@@ -115,8 +145,23 @@ def main():
 
         ### CLAP ###
         if model == "clap":
-            generate(load_clap, clap_embeds, file_paths, 
+            print('### CLAP ###')
+            df = generate(load_clap, clap_embeds, CLAP_SR, file_paths, 
                 df, transformations, model, out_path)
+            
+        ### Audio CLIP ###
+        if model == "audioclip":
+            print('### AUDIOCLIP ###')
+            df = generate(load_aclip, aclip_embeds, ACLIP_SR, file_paths, 
+                df, transformations, model, out_path)
+            
+        ### wav2clip ###
+        if model == "wav2clip":
+            print('### WAV2CLIP ###')
+            df = generate(load_wav2clip, wav2clip_embeds, WAV2CLIP_SR, 
+                     file_paths, df, transformations, model, out_path)
+            
+    del(df)
 
 if __name__ == "__main__":
     main()

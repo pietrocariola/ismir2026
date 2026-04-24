@@ -1,5 +1,8 @@
 import librosa
 import numpy as np
+import essentia
+import essentia.standard as es
+from audiomentations import BitCrush
 
 # no transformation
 def identity(y: np.ndarray, sr: int, *args):
@@ -20,10 +23,43 @@ def timestretch(y: np.ndarray, sr: int, rate: float):
     y = librosa.effects.time_stretch(y, rate=rate)
     return y, sr
 
+def highpass(y: np.ndarray, sr: int, cutoff: int):
+    y = es.HighPass(cutoffFrequency=cutoff, sampleRate=sr)(y)
+    return y, sr
+
+def lowpass(y: np.ndarray, sr: int, cutoff: int):
+    y = es.LowPass(cutoffFrequency=cutoff, sampleRate=sr)(y)
+    return y, sr
+
+def clipper(y: np.ndarray, sr: int, clip_level: float):
+    y = es.Clipper(max=clip_level, min=-clip_level)(y)
+    return y, sr
+
+def noiseadder(y: np.ndarray, sr: int, level: int):
+    # level = -100dB low noise
+    # level = 0dB a lot of noise
+    # fixSeed=True to fix seed as 0
+    y = es.NoiseAdder(fixSeed=True, level=level)(y)
+    return y, sr
+
+def bitcrush(y: np.ndarray, sr: int, depth: int):
+    y = BitCrush(min_bit_depth=depth, max_bit_depth=depth, p=1.0)(y, sr)
+    return y, sr
+
+def gain(y: np.ndarray, sr: int, gain: float):
+    y = y*gain
+    return y, sr
+
 tf_dict = {
     "identity": identity,
     "pitchshift": pitchshift,
     "timestretch": timestretch,
+    "highpass": highpass,
+    "lowpass": lowpass,
+    "clipper": clipper,
+    "noiseadder": noiseadder,
+    "bitcrush": bitcrush,
+    "gain": gain,
 }
 
 tf_dict_params = {
@@ -32,4 +68,10 @@ tf_dict_params = {
                     -1, -2, -3, -4, -5, -6, -7, -8, -9, -10, -11, -12, -24],
     "timestretch": [1.1, 1.2, 1.3, 1.4, 1.5, 2.0,
                      1/1.1, 1/1.2, 1/1.3, 1/1.4, 1/1.5, 1/2.0],
+    "highpass": [500, 1000, 2000, 4000, 8000, 16000],
+    "lowpass": [16000, 8000, 4000, 2000, 1000, 500],
+    "clipper": [0.1, 0.2, 0.4, 0.8],
+    "noiseadder": [-100, -80, -60, -40, -20, 0],
+    "bitcrush": [4, 6, 8, 10, 12, 14],
+    "gain": [1.2, 1.5, 2.0, 3.0, 1/1.2, 1/1.5, 1/2.0, 1/3.0],
 }
