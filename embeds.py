@@ -69,7 +69,7 @@ def generate(load_mdl, embed_fn, sr, file_paths, df, transformations, model, out
             tfparams = tf.tf_dict_params[transf] # params set in transformation.py
             for tfparam in tfparams:
                 transf_param_name = str(tfparam).lower().replace("_", "")[:5]                                     
-                file_embeds = f"x_{d}_{file.split('.')[0].replace('_', '').lower()}_{model}_{transf}_{transf_param_name.replace('.','p')}.npy"
+                file_embeds = f"x_{d}_{g[:3]}_{file.split('.')[0].replace('_', '').lower()}_{model}_{transf}_{transf_param_name.replace('.','p')}.npy"
                 file_embeds_path = os.path.join(out_path, file_embeds)
                 if not Path(file_embeds_path).exists():                           
                     x = embed_fn(y, sr, mdl, transf, tfparam)

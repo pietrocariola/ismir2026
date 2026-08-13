@@ -1,8 +1,7 @@
-export PYTHONPATH=/home/gpu3/visfma/AudioCLIP:$PYTHONPATH
-python /home/gpu3/visfma/embeds.py  --tracks "tracks.json" \
+python /home/gpu3/visfma/dist_nd.py --input_path "/home/gpu3/visfma/embeds" \
                     --datasets "fmasmallx" \
                     --models "clap" "audioclip" "wav2clip" \
                     --transformations "identity" "pitchshift" "timestretch" \
                     "highpass" "lowpass" "clipper" "noiseadder" "bitcrush" "gain" \
-                    --output_path "/home/gpu3/visfma/embeds" \
+                    --output_path "/home/gpu3/visfma/dist_nd" \
                             
