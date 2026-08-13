@@ -40,7 +40,7 @@ def main():
                     exit()
                 params = ['id']
                 for param in tf.tf_dict_params[transformation]:
-                    params.append(param)
+                    params.append(str(param)[:5])
                 df = pd.DataFrame(
                     np.zeros((len(params), len(params))),
                     columns=params,
@@ -54,7 +54,7 @@ def main():
                             f1 = f"x_{dataset}_{track}_{model}_identity_none.npy"
                             f1 = os.path.join(input_path, f1)
                         else:
-                            f1 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param1).replace('.', 'p')}.npy"
+                            f1 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param1)[:5].replace('.', 'p')}.npy"
                             f1 = os.path.join(input_path, f1)
                         a1 = np.load(f1, 'r')
                         for j in range(i, len(params)):
@@ -63,7 +63,7 @@ def main():
                                 f2 = f"x_{dataset}_{track}_{model}_identity_none.npy"
                                 f2 = os.path.join(input_path, f2)
                             else:
-                                f2 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param2).replace('.', 'p')}.npy"
+                                f2 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param2)[:5].replace('.', 'p')}.npy"
                                 f2 = os.path.join(input_path, f2)
                             a2 = np.load(f2, 'r')
                             d = np.sqrt(np.sum((a2-a1)**2))
