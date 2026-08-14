@@ -11,6 +11,7 @@ def main():
     parser.add_argument("--datasets", type=str, nargs="+", help="Calculates distance for each dataset indenpendently")
     parser.add_argument("--models", type=str, nargs="+", help="Calculates distance for each model indenpendently")
     parser.add_argument("--transformations", type=str, nargs="+", help="Calculates distance for each transformation indenpendently")
+    parser.add_argument("--normalize", type=int, help="1 to normalize nD embeddings to unit vectors, 0 otherwise.")
     parser.add_argument("--output_path", type=str, help="Full path where the distances will be saved on")
     args = parser.parse_args()
 
@@ -25,6 +26,10 @@ def main():
     
     transformations = args.transformations
     print(f"transformations: {args.transformations}")
+
+    normalize = args.normalize
+    print(f"normalize: {args.normalize}")
+    normalize = True if normalize == 1 else False
 
     output_path = os.path.abspath(args.output_path)
     print(f"output_path: {args.output_path}")
@@ -56,7 +61,8 @@ def main():
                         else:
                             f1 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param1)[:5].replace('.', 'p')}.npy"
                             f1 = os.path.join(input_path, f1)
-                        a1 = np.load(f1, 'r')
+                        a1 = np.load(f1, 'r')[0,:]
+                        a1 = a1 / np.linalg.norm(a1) if normalize else a1
                         for j in range(i, len(params)):
                             param2 = params[j]
                             if param2 == 'id':
@@ -65,7 +71,8 @@ def main():
                             else:
                                 f2 = f"x_{dataset}_{track}_{model}_{transformation}_{str(param2)[:5].replace('.', 'p')}.npy"
                                 f2 = os.path.join(input_path, f2)
-                            a2 = np.load(f2, 'r')
+                            a2 = np.load(f2, 'r')[0,:]
+                            a2 = a2 / np.linalg.norm(a2) if normalize else a2
                             d = np.sqrt(np.sum((a2-a1)**2))
                             df.iloc[i,j] += d / len(tracks)
                             df.iloc[j,i] += d / len(tracks)
