@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--models", type=str, nargs="+", help="Calculates distance for each model indenpendently")
     parser.add_argument("--transformations", type=str, nargs="+", help="Calculates distance for each transformation indenpendently")
     parser.add_argument("--normalize", type=int, help="1 to normalize nD embeddings to unit vectors, 0 otherwise.")
+    parser.add_argument("--calc_mode", type=str, help="calculation mode: 'dist' for euclidean distance or 'cos' for cosine similarity.")
     parser.add_argument("--output_path", type=str, help="Full path where the distances will be saved on")
     args = parser.parse_args()
 
@@ -30,6 +31,9 @@ def main():
     normalize = args.normalize
     print(f"normalize: {args.normalize}")
     normalize = True if normalize == 1 else False
+
+    calc_mode = args.calc_mode
+    print(f"calc_mode: {args.calc_mode}")
 
     output_path = os.path.abspath(args.output_path)
     print(f"output_path: {args.output_path}")
@@ -73,10 +77,15 @@ def main():
                                 f2 = os.path.join(input_path, f2)
                             a2 = np.load(f2, 'r')[0,:]
                             a2 = a2 / np.linalg.norm(a2) if normalize else a2
-                            d = np.sqrt(np.sum((a2-a1)**2))
+                            if calc_mode == 'dist': # euclidean distance
+                                d = np.sqrt(np.sum((a2-a1)**2))
+                            elif calc_mode == 'cos': # cosine similarity
+                                d = np.dot(a1, a2) / (np.linalg.norm(a1) * np.linalg.norm(a2))
                             df.iloc[i,j] += d / len(tracks)
-                            df.iloc[j,i] += d / len(tracks)
-                output = os.path.join(output_path, f"dist_{dataset}_{model}_{transformation}.csv")
+                            if i!=j:
+                                df.iloc[j,i] += d / len(tracks)
+                save_file = f"{calc_mode}_{dataset}_{model}_{transformation}.csv"
+                output = os.path.join(output_path, save_file)
                 df.to_csv(output, index=True)
                 del(df)
 

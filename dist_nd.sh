@@ -4,5 +4,6 @@ python /home/gpu3/visfma/dist_nd.py --input_path "/home/gpu3/visfma/embeds" \
                     --transformations "pitchshift" "timestretch" \
                     "highpass" "lowpass" "clipper" "noiseadder" "bitcrush" "gain" \
                     --normalize 1 \
-                    --output_path "/home/gpu3/visfma/dist_norm_nd" \
+                    --calc_mode 'cos' \
+                    --output_path "/home/gpu3/visfma/cos_norm_nd" \
                             
