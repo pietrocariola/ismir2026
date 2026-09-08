@@ -75,3 +75,36 @@ tf_dict_params = {
     "bitcrush": [4, 6, 8, 10, 12, 14],
     "gain": [1.2, 1.5, 2.0, 3.0, 1/1.2, 1/1.5, 1/2.0, 1/3.0],
 }
+
+tf_dict_ids = {
+    "pitchshift": 0,
+    "timestretch": 1,
+    "highpass": 0,
+    "lowpass": 20000,
+    "clipper": 1,
+    "noiseadder": -200,
+    "bitcrush": 16,
+    "gain": 1,
+}
+
+tf_dict_ticks = {
+    "pitchshift": [-24, -12, 0, 12, 24],
+    "timestretch": [0, 0.5, 1, 1.5, 2],
+    "highpass": [0, 4000, 8000, 12000, 16000],
+    "lowpass": [0, 4000, 8000, 12000, 16000],
+    "clipper": [0, 0.25, 0.5, 0.75, 1],
+    "noiseadder": [-200, -150, -100, -50, 0],
+    "bitcrush": [4, 6, 8, 10, 12, 14, 16],
+    "gain": [0, 1, 2, 3],
+}
+
+tf_dict_scale = {
+    "pitchshift": "semitones",
+    "timestretch": "fraction",
+    "highpass": "cutoff (Hz)",
+    "lowpass": "cutoff (Hz)",
+    "clipper": "ceiling",
+    "noiseadder": "noise dB",
+    "bitcrush": "bit depth",
+    "gain": "fraction",
+}
